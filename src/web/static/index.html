@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AEVO Chat-analytics: Product Discovery</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Vue 3 CDN -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background-color: #080c14; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+  </style>
+</head>
+<body class="text-gray-100 min-h-screen">
+  <div id="app" class="flex flex-col min-h-screen">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-gray-900/90 backdrop-blur border-b border-gray-800 sticky top-0 z-50 px-6 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-4">
+        <!-- Logo -->
+        <div class="flex items-center space-x-3">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-500 flex items-center justify-center font-black text-xl text-white shadow-lg shadow-indigo-500/25">
+            A
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="font-bold text-base tracking-wide text-white">AEVO Chat-analytics</span>
+              <span class="text-[10px] bg-indigo-900/70 text-indigo-300 border border-indigo-700/50 px-2 py-0.5 rounded-full font-semibold">Discovery</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Country Switcher -->
+        <div class="flex items-center space-x-1 bg-gray-800/90 border border-gray-700/80 p-1 rounded-xl">
+          <button 
+            v-for="c in countries" 
+            :key="c.country_code"
+            @click="switchCountry(c.country_code)"
+            :class="selectedCountry === c.country_code ? 'bg-indigo-600 text-white shadow' : 'text-gray-400 hover:text-gray-200'"
+            class="px-3 py-1 rounded-lg text-xs font-medium transition flex items-center space-x-1.5"
+          >
+            <span>{{ c.flag_emoji }}</span>
+            <span>{{ c.country_name }}</span>
+            <span v-if="c.messages_count > 0" class="text-[10px] text-indigo-200 font-bold ml-1">{{ (c.messages_count/1000).toFixed(0) }}k</span>
+          </button>
+          <button 
+            @click="showAddCountryModal = true"
+            class="px-2 py-1 text-gray-500 hover:text-indigo-400 text-xs font-semibold"
+            title="Подключить новую страну"
+          >
+            + Страна
+          </button>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="flex space-x-1 bg-gray-800/80 p-1 rounded-xl border border-gray-700/60">
+        <button 
+          v-for="tab in tabs" 
+          :key="tab.id"
+          @click="currentTab = tab.id"
+          :class="currentTab === tab.id ? 'bg-indigo-600 text-white shadow' : 'text-gray-400 hover:text-gray-200'"
+          class="px-3.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center space-x-2"
+        >
+          <span>{{ tab.icon }}</span>
+          <span>{{ tab.name }}</span>
+        </button>
+      </nav>
+
+      <!-- Hardware & DB Status Indicators -->
+      <div class="flex items-center space-x-3 text-xs">
+        <div class="flex items-center space-x-1.5 bg-gray-800/80 border border-gray-700 px-2.5 py-1 rounded-lg text-gray-300">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>DuckDB: <b>240k</b></span>
+        </div>
+        <div class="flex items-center space-x-1.5 bg-indigo-950/70 border border-indigo-800/60 px-2.5 py-1 rounded-lg text-indigo-300">
+          <span>⚡</span>
+          <span>GPU: <b>RTX 3060 (LAYA)</b></span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6">
+
+      <!-- ================= TAB 1: ДАШБОРД БОЛЕЙ ================= -->
+      <div v-if="currentTab === 'dashboard'" class="space-y-6">
+        
+        <!-- Executive AI Digest Summary -->
+        <div class="bg-gradient-to-r from-indigo-950/60 via-purple-950/40 to-gray-900 border border-indigo-800/40 rounded-2xl p-5 shadow-xl relative overflow-hidden">
+          <div class="flex items-start justify-between">
+            <div class="space-y-2 max-w-3xl">
+              <div class="flex items-center space-x-2">
+                <span class="text-xs bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                  Executive Product Digest • {{ getCountryName(selectedCountry) }}
+                </span>
+                <span class="text-xs text-gray-400">Срез по 240k сообщениям за 2026 г.</span>
+              </div>
+              <h2 class="text-lg font-bold text-white leading-snug">
+                Главный фокус месяца: Бюрократическое ужесточение DTV и блокировка оплат жилья
+              </h2>
+              <p class="text-xs text-gray-300 leading-relaxed">
+                С сентября 2026 года в русскоязычном сообществе Таиланда зафиксирован рекордный всплеск тревожности: консульства требуют справки о несудимости и ПМЖ для DTV-виз, а лимит на 2 сухопутных въезда в год отрезает традиционный бордер-ран. Одновременно растет коммерческий спрос на «сервисы под ключ» (оплата AirBnb, открытие карт в Bangkok Bank, сопровождение подачи на визы).
+              </p>
+            </div>
+            <div class="text-right">
+              <span class="text-[11px] text-gray-400 block">Потенциал ниш (Max Opp Score)</span>
+              <span class="text-3xl font-black text-rose-400">98.5 <span class="text-xs font-normal text-gray-400">/ 100</span></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top Metrics KPI Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div class="bg-gray-900/90 border border-gray-800 p-4 rounded-xl">
+            <span class="text-xs text-gray-400 font-medium">Сообщений в выбранной стране</span>
+            <div class="text-2xl font-bold text-white mt-1">{{ stats.total_messages?.toLocaleString() || '...' }}</div>
+            <span class="text-xs text-indigo-400 mt-2 block">{{ getCountryName(selectedCountry) }} • 4 чата</span>
+          </div>
+          <div class="bg-gray-900/90 border border-gray-800 p-4 rounded-xl">
+            <span class="text-xs text-gray-400 font-medium">Уникальных экспатов и туристов</span>
+            <div class="text-2xl font-bold text-emerald-400 mt-1">{{ stats.total_users?.toLocaleString() || '...' }}</div>
+            <span class="text-xs text-gray-400 mt-2 block">Сквозные Telegram User ID</span>
+          </div>
+          <div class="bg-gray-900/90 border border-gray-800 p-4 rounded-xl">
+            <span class="text-xs text-gray-400 font-medium">Сообщений с острой болью (Score ≥ 2.0)</span>
+            <div class="text-2xl font-bold text-rose-400 mt-1">{{ stats.high_pain_count?.toLocaleString() || '0' }}</div>
+            <span class="text-xs text-rose-400/80 mt-2 block">Жалобы, отказы, риски штрафов</span>
+          </div>
+          <div class="bg-gray-900/90 border border-gray-800 p-4 rounded-xl">
+            <span class="text-xs text-gray-400 font-medium">Готовность платить (Коммерческий спрос)</span>
+            <div class="text-2xl font-bold text-amber-400 mt-1">{{ stats.commercial_count?.toLocaleString() || '0' }}</div>
+            <span class="text-xs text-amber-400/80 mt-2 block">Прямой поиск агентов / помощников</span>
+          </div>
+        </div>
+
+        <!-- ================= PROBLEM CLUSTERS (СИНТЕЗ БОЛЕЙ) ================= -->
+        <div class="space-y-3">
+          <div class="flex justify-between items-center">
+            <div>
+              <h3 class="text-base font-bold text-white flex items-center space-x-2">
+                <span>🔥 Топ проблемных кластеров</span>
+                <span class="text-xs bg-rose-950 text-rose-300 border border-rose-800/60 px-2 py-0.5 rounded-full font-semibold">Ранжировано по Opportunity Score</span>
+              </h3>
+              <p class="text-xs text-gray-400">Автоматически синтезированные узлы болей из 240k сообщений с реальными цитатами людей</p>
+            </div>
+            <button 
+              @click="recalculateClusters"
+              class="text-xs text-gray-400 hover:text-white bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-700 transition"
+            >
+              🔄 Пересчитать скоринг
+            </button>
+          </div>
+
+          <!-- Clusters Grid -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div 
+              v-for="cluster in clusters" 
+              :key="cluster.cluster_id"
+              class="bg-gray-900 border border-gray-800 hover:border-gray-700 transition rounded-xl p-5 space-y-3 flex flex-col justify-between"
+            >
+              <div>
+                <!-- Cluster Header -->
+                <div class="flex items-start justify-between gap-2">
+                  <div class="flex items-center space-x-2">
+                    <span class="text-xs font-semibold text-indigo-400 bg-indigo-950/80 px-2 py-0.5 rounded border border-indigo-800/60">
+                      {{ getTopicLabel(cluster.topic) }}
+                    </span>
+                    <span class="text-xs text-gray-400">{{ cluster.mentions_count.toLocaleString() }} упоминаний</span>
+                  </div>
+
+                  <!-- Opportunity Score Badge -->
+                  <div class="text-right">
+                    <div class="flex items-center space-x-1.5">
+                      <span class="text-[11px] text-gray-400 font-medium">Opp Score:</span>
+                      <span class="text-sm font-black text-rose-400">{{ cluster.opportunity_score }}</span>
+                      <span class="text-[10px] text-gray-500">/100</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Title & Description -->
+                <h4 class="text-sm font-bold text-white mt-2">{{ cluster.title }}</h4>
+                <p class="text-xs text-gray-300 mt-1 leading-relaxed">{{ cluster.description }}</p>
+
+                <!-- Metrics bar -->
+                <div class="flex items-center space-x-4 pt-2 text-xs text-gray-400">
+                  <span>Острота боли: <b class="text-rose-400">{{ cluster.avg_pain }} / 3.0</b></span>
+                  <span>Коммерческий спрос: <b class="text-amber-400">{{ cluster.commercial_intent_pct }}%</b></span>
+                </div>
+
+                <!-- Sample Quotes Accordion -->
+                <div class="mt-3 pt-3 border-t border-gray-800/80 space-y-2">
+                  <span class="text-[11px] text-gray-400 font-semibold block uppercase tracking-wider">Цитаты реальных участников:</span>
+                  <div 
+                    v-for="quote in cluster.sample_quotes" 
+                    :key="quote.message_id"
+                    class="bg-gray-800/60 border border-gray-700/50 rounded-lg p-2.5 text-xs space-y-1"
+                  >
+                    <div class="flex justify-between items-center text-[10px] text-gray-400">
+                      <span class="font-semibold text-gray-300">{{ quote.author }}</span>
+                      <span>{{ quote.date }} • ❤️ {{ quote.reactions }}</span>
+                    </div>
+                    <p class="text-gray-200 italic">"{{ quote.text }}"</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Cluster Actions -->
+              <div class="pt-3 border-t border-gray-800 flex items-center justify-between">
+                <button 
+                  @click="openHypothesisFromCluster(cluster)"
+                  class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs px-3 py-1.5 rounded-lg transition shadow"
+                >
+                  + Сформировать гипотезу
+                </button>
+                <button 
+                  @click="goToFeedForCluster(cluster)"
+                  class="text-xs text-indigo-400 hover:text-indigo-300 font-medium"
+                >
+                  Смотреть все сообщения темы →
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ================= TAB 2: ЛЕНТА ИНСАЙТОВ ================= -->
+      <div v-if="currentTab === 'feed'" class="space-y-4">
+        <!-- Filter Bar -->
+        <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl flex flex-wrap items-center gap-3">
+          <!-- Topic Filter -->
+          <div>
+            <label class="block text-[11px] text-gray-400 mb-1">Тематика:</label>
+            <select v-model="filters.topic" @change="applyFilters" class="bg-gray-800 border border-gray-700 text-xs rounded-lg px-3 py-1.5 text-gray-200 focus:outline-none focus:border-indigo-500">
+              <option value="all">Все темы</option>
+              <option value="visas">Визы и въезд (DTV, штампы)</option>
+              <option value="money">Банки, переводы, карты</option>
+              <option value="housing">Аренда жилья и депозиты</option>
+              <option value="transport">Байки, права, авто</option>
+              <option value="health">Медицина и страховки</option>
+              <option value="general">Бытовые / флуд</option>
+            </select>
+          </div>
+
+          <!-- Signal Type Filter -->
+          <div>
+            <label class="block text-[11px] text-gray-400 mb-1">Тип сигнала:</label>
+            <select v-model="filters.signal_type" @change="applyFilters" class="bg-gray-800 border border-gray-700 text-xs rounded-lg px-3 py-1.5 text-gray-200 focus:outline-none focus:border-indigo-500">
+              <option value="all">Все сигналы</option>
+              <option value="pain_complaint">Жалоба / боль / отказ</option>
+              <option value="commercial_intent">Поиск платной услуги / агента</option>
+              <option value="unresolved_question">Сложный вопрос / потребность</option>
+              <option value="casual_chat">Обычный диалог</option>
+            </select>
+          </div>
+
+          <!-- Min Pain Intensity -->
+          <div>
+            <label class="block text-[11px] text-gray-400 mb-1">Мин. сила боли (0–3):</label>
+            <select v-model="filters.min_pain" @change="applyFilters" class="bg-gray-800 border border-gray-700 text-xs rounded-lg px-3 py-1.5 text-gray-200 focus:outline-none focus:border-indigo-500">
+              <option :value="0">Любая (от 0.0)</option>
+              <option :value="1.5">Средняя (≥ 1.5)</option>
+              <option :value="2.0">Высокая боль (≥ 2.0)</option>
+              <option :value="2.5">Критическая боль (≥ 2.5)</option>
+            </select>
+          </div>
+
+          <!-- Search Query -->
+          <div class="flex-1 min-w-[200px]">
+            <label class="block text-[11px] text-gray-400 mb-1">Поиск по тексту:</label>
+            <div class="relative">
+              <input 
+                v-model="filters.search" 
+                @keyup.enter="applyFilters"
+                type="text" 
+                placeholder="Например: dtv, отказ, банк, страховка, штраф..." 
+                class="w-full bg-gray-800 border border-gray-700 text-xs rounded-lg pl-3 pr-8 py-1.5 text-gray-200 placeholder-gray-500 focus:outline-none focus:border-indigo-500"
+              >
+              <button @click="applyFilters" class="absolute right-2.5 top-1.5 text-gray-400 hover:text-white text-xs">🔍</button>
+            </div>
+          </div>
+
+          <!-- Reset Button -->
+          <div class="pt-4">
+            <button @click="resetFilters" class="text-xs text-gray-400 hover:text-gray-200 underline">Сбросить</button>
+          </div>
+        </div>
+
+        <!-- Result Stats & Sorting -->
+        <div class="flex items-center justify-between text-xs text-gray-400 px-1">
+          <span>Найдено сообщений: <b>{{ feedTotal.toLocaleString() }}</b> (страница {{ feedPage }})</span>
+          <div class="flex items-center space-x-2">
+            <span>Сортировка:</span>
+            <select v-model="filters.sort_by" @change="applyFilters" class="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-gray-300">
+              <option value="pain_desc">По силе боли (Pain Score)</option>
+              <option value="date_desc">По новизне (Дате)</option>
+              <option value="reactions_desc">По реакциям сообщества</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Message Cards Feed -->
+        <div v-if="feedLoading" class="text-center py-16 text-gray-400 text-sm">
+          Загрузка сигналов из DuckDB...
+        </div>
+
+        <div v-else-if="feedItems.length === 0" class="text-center py-16 bg-gray-900 border border-gray-800 rounded-xl">
+          <span class="text-3xl block mb-2">📭</span>
+          <span class="text-gray-300 font-medium">Сообщений по данным фильтрам не найдено</span>
+          <p class="text-xs text-gray-500 mt-1">Попробуйте снизить минимальную силу боли или сбросить поисковый запрос</p>
+        </div>
+
+        <div v-else class="space-y-3">
+          <div 
+            v-for="msg in feedItems" 
+            :key="msg.chat_id + '_' + msg.message_id" 
+            class="bg-gray-900 border border-gray-800 hover:border-gray-700 transition p-4 rounded-xl space-y-2.5"
+          >
+            <!-- Card Header -->
+            <div class="flex items-center justify-between text-xs">
+              <div class="flex items-center space-x-2">
+                <span class="font-semibold text-gray-200">{{ msg.display_name }}</span>
+                <span class="text-gray-500 text-[11px]">в «{{ msg.chat_name }}»</span>
+                <span class="text-gray-500 text-[11px]">• {{ msg.date }}</span>
+              </div>
+
+              <!-- Badges -->
+              <div class="flex items-center space-x-2">
+                <span 
+                  class="px-2 py-0.5 rounded text-[11px] font-semibold"
+                  :class="getSignalBadgeClass(msg.signal_type)"
+                >
+                  {{ getSignalLabel(msg.signal_type) }}
+                </span>
+
+                <span 
+                  class="px-2 py-0.5 rounded text-[11px] font-bold"
+                  :class="getPainBadgeClass(msg.pain_intensity)"
+                >
+                  Боль: {{ msg.pain_intensity }}
+                </span>
+
+                <span class="bg-gray-800 text-gray-300 border border-gray-700 px-2 py-0.5 rounded text-[11px]">
+                  {{ getTopicLabel(msg.topic_category) }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Message Text -->
+            <p class="text-sm text-gray-200 whitespace-pre-line leading-relaxed font-normal">
+              {{ msg.text }}
+            </p>
+
+            <!-- Card Footer & Actions -->
+            <div class="flex items-center justify-between pt-2 border-t border-gray-800/80 text-xs text-gray-400">
+              <div class="flex items-center space-x-3">
+                <span v-if="msg.reactions_count > 0" class="text-amber-400 font-medium">❤️ {{ msg.reactions_count }} реакций</span>
+                <span v-if="msg.reply_to_message_id" class="text-indigo-400 font-medium">↩ Ответ на #{{ msg.reply_to_message_id }}</span>
+                <span v-if="msg.human_verified" class="text-emerald-400 font-semibold">✓ Проверено экспертом</span>
+              </div>
+
+              <div class="flex items-center space-x-2">
+                <button 
+                  @click="openHypothesisModal(msg)"
+                  class="bg-indigo-600/80 hover:bg-indigo-600 text-white px-2.5 py-1 rounded text-xs transition"
+                >
+                  + Сформировать гипотезу
+                </button>
+                <button 
+                  @click="openTagModal(msg)"
+                  class="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 px-2.5 py-1 rounded text-xs transition"
+                >
+                  ✏️ Сменить тег
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div v-if="feedTotal > feedLimit" class="flex justify-between items-center py-4 text-xs text-gray-400">
+          <button 
+            :disabled="feedPage <= 1" 
+            @click="feedPage--; loadFeed()"
+            class="px-3 py-1.5 bg-gray-800 rounded border border-gray-700 disabled:opacity-40"
+          >
+            ← Предыдущая
+          </button>
+          <span>Страница {{ feedPage }} из {{ Math.ceil(feedTotal / feedLimit) }}</span>
+          <button 
+            :disabled="feedPage >= Math.ceil(feedTotal / feedLimit)" 
+            @click="feedPage++; loadFeed()"
+            class="px-3 py-1.5 bg-gray-800 rounded border border-gray-700 disabled:opacity-40"
+          >
+            Следующая →
+          </button>
+        </div>
+      </div>
+
+      <!-- ================= TAB 3: БЭКЛОГ ГИПОТЕЗ ================= -->
+      <div v-if="currentTab === 'hypotheses'" class="space-y-6">
+        <div class="flex justify-between items-center">
+          <div>
+            <h2 class="text-lg font-bold text-white">Бэклог продуктовых гипотез</h2>
+            <p class="text-xs text-gray-400">Сформулированные идеи продуктов и сервисов на основе выявленных болей сообщества</p>
+          </div>
+          <button 
+            @click="openHypothesisModal(null)"
+            class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs px-3.5 py-2 rounded-lg transition shadow"
+          >
+            + Добавить гипотезу вручную
+          </button>
+        </div>
+
+        <!-- Hypotheses List -->
+        <div v-if="hypotheses.length === 0" class="text-center py-16 bg-gray-900 border border-gray-800 rounded-xl">
+          <span class="text-3xl block mb-2">💡</span>
+          <span class="text-gray-300 font-medium">Пока нет созданных гипотез</span>
+          <p class="text-xs text-gray-500 mt-1">Перейдите на «Дашборд болей» и нажмите «+ Сформировать гипотезу» на любом проблемном кластере</p>
+        </div>
+
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div 
+            v-for="hyp in hypotheses" 
+            :key="hyp.id"
+            class="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-3 relative flex flex-col justify-between"
+          >
+            <div>
+              <div class="flex justify-between items-start">
+                <span class="text-[11px] uppercase tracking-wider font-bold text-indigo-400 bg-indigo-950/80 px-2 py-0.5 rounded border border-indigo-800/60">
+                  {{ getTopicLabel(hyp.topic) }}
+                </span>
+                <button @click="deleteHypothesis(hyp.id)" class="text-gray-500 hover:text-rose-400 text-xs">🗑 Удалить</button>
+              </div>
+
+              <h3 class="text-base font-bold text-white mt-2">{{ hyp.title }}</h3>
+              
+              <div class="mt-2 space-y-2 text-xs">
+                <div>
+                  <span class="text-gray-400 font-medium">Проблема / Боль:</span>
+                  <p class="text-gray-200 mt-0.5">{{ hyp.pain_summary }}</p>
+                </div>
+                <div>
+                  <span class="text-gray-400 font-medium">Целевая аудитория:</span>
+                  <p class="text-gray-300 mt-0.5">{{ hyp.target_audience }}</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="pt-3 border-t border-gray-800 flex justify-between items-center text-[11px] text-gray-500">
+              <span>Создано: {{ hyp.created_at }}</span>
+              <span class="text-emerald-400 font-semibold uppercase">{{ hyp.status }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= TAB 4: ПРАВИЛА И LAYA ================= -->
+      <div v-if="currentTab === 'rules'" class="space-y-6">
+        <div class="flex justify-between items-center">
+          <div>
+            <h2 class="text-lg font-bold text-white">Правила разметки и статус LAYA</h2>
+            <p class="text-xs text-gray-400">Управление критериями классификатора и ключевыми словами</p>
+          </div>
+          <button 
+            @click="triggerClassification"
+            :disabled="classifying"
+            class="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-medium text-xs px-3.5 py-2 rounded-lg transition shadow"
+          >
+            {{ classifying ? '⏳ Идет разметка на GPU...' : '⚡ Разметить следующие 500 сообщ.' }}
+          </button>
+        </div>
+
+        <!-- Rules Table -->
+        <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+          <table class="w-full text-left text-xs text-gray-300">
+            <thead class="bg-gray-800/80 text-gray-400 uppercase text-[10px] tracking-wider border-b border-gray-700">
+              <tr>
+                <th class="py-3 px-4">Правило</th>
+                <th class="py-3 px-4">Тема</th>
+                <th class="py-3 px-4">Сигнал</th>
+                <th class="py-3 px-4">Дефолтная боль</th>
+                <th class="py-3 px-4">Ключевые фразы / триггеры</th>
+                <th class="py-3 px-4">Статус</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-800">
+              <tr v-for="r in rules" :key="r.rule_key" class="hover:bg-gray-800/40">
+                <td class="py-3 px-4 font-semibold text-white">{{ r.rule_name }}</td>
+                <td class="py-3 px-4"><span class="bg-gray-800 px-2 py-0.5 rounded border border-gray-700">{{ getTopicLabel(r.topic) }}</span></td>
+                <td class="py-3 px-4">{{ getSignalLabel(r.signal_type) }}</td>
+                <td class="py-3 px-4 font-bold text-rose-400">{{ r.default_pain }}</td>
+                <td class="py-3 px-4 text-gray-400">
+                  <div class="flex flex-wrap gap-1 max-w-md">
+                    <span v-for="kw in r.keywords" :key="kw" class="bg-gray-800 px-1.5 py-0.5 rounded text-[10px] text-gray-300">
+                      {{ kw }}
+                    </span>
+                  </div>
+                </td>
+                <td class="py-3 px-4">
+                  <span class="text-emerald-400 font-semibold">Активно</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Modal: Create Hypothesis -->
+    <div v-if="hypothesisModalOpen" class="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+      <div class="bg-gray-900 border border-gray-800 rounded-xl max-w-lg w-full p-6 space-y-4">
+        <h3 class="text-base font-bold text-white">Сформировать продуктовую гипотезу</h3>
+        <div class="space-y-3 text-xs">
+          <div>
+            <label class="block text-gray-400 mb-1">Название гипотезы / идеи:</label>
+            <input v-model="newHypothesis.title" type="text" placeholder="Например: Сервис экспресс-подготовки справок для DTV визы" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-white">
+          </div>
+          <div>
+            <label class="block text-gray-400 mb-1">Тематика:</label>
+            <select v-model="newHypothesis.topic" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-white">
+              <option value="visas">Визы и въезд</option>
+              <option value="money">Банки и финансы</option>
+              <option value="housing">Аренда жилья</option>
+              <option value="transport">Транспорт и байки</option>
+              <option value="health">Медицина и страхование</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-gray-400 mb-1">Формулировка боли и потребности:</label>
+            <textarea v-model="newHypothesis.pain_summary" rows="3" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-white"></textarea>
+          </div>
+          <div>
+            <label class="block text-gray-400 mb-1">Целевая аудитория:</label>
+            <input v-model="newHypothesis.target_audience" type="text" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-white">
+          </div>
+        </div>
+        <div class="flex justify-end space-x-2 pt-2">
+          <button @click="hypothesisModalOpen = false" class="px-3 py-1.5 bg-gray-800 text-gray-300 rounded text-xs">Отмена</button>
+          <button @click="saveHypothesis" class="px-3 py-1.5 bg-indigo-600 text-white rounded text-xs font-semibold">Сохранить гипотезу</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Add Country Info -->
+    <div v-if="showAddCountryModal" class="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+      <div class="bg-gray-900 border border-gray-800 rounded-xl max-w-md w-full p-6 space-y-4">
+        <h3 class="text-base font-bold text-white">Подключение новых стран</h3>
+        <p class="text-xs text-gray-300 leading-relaxed">
+          Чтобы добавить новую страну (Бали 🇮🇩, Вьетнам 🇻🇳, ОАЭ 🇦🇪):
+        </p>
+        <ol class="text-xs text-gray-400 list-decimal list-inside space-y-1.5">
+          <li>Поместите JSON-выгрузки чатов новой страны в папку <code class="text-indigo-300 bg-gray-800 px-1 py-0.5 rounded">data/raw/</code>.</li>
+          <li>Укажите код страны (например, <code class="text-indigo-300 bg-gray-800 px-1 py-0.5 rounded">ID</code> для Бали).</li>
+          <li>Запустите ETL-скрипт или загрузите через веб-интерфейс.</li>
+        </ol>
+        <div class="flex justify-end pt-2">
+          <button @click="showAddCountryModal = false" class="px-3 py-1.5 bg-indigo-600 text-white rounded text-xs font-semibold">Понятно</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Edit Tag -->
+    <div v-if="tagModalOpen" class="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+      <div class="bg-gray-900 border border-gray-800 rounded-xl max-w-md w-full p-6 space-y-4">
+        <h3 class="text-base font-bold text-white">Корректировка разметки сообщения</h3>
+        <p class="text-xs text-gray-400 line-clamp-2">"{{ activeMessage?.text }}"</p>
+        <div class="space-y-3 text-xs">
+          <div>
+            <label class="block text-gray-400 mb-1">Тематика:</label>
+            <select v-model="editTag.topic_category" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-white">
+              <option value="visas">Визы и въезд</option>
+              <option value="money">Банки и переводы</option>
+              <option value="housing">Аренда жилья</option>
+              <option value="transport">Транспорт</option>
+              <option value="health">Медицина</option>
+              <option value="general">Бытовые / флуд</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-gray-400 mb-1">Сигнал:</label>
+            <select v-model="editTag.signal_type" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-white">
+              <option value="pain_complaint">Жалоба / боль / отказ</option>
+              <option value="commercial_intent">Поиск платной помощи</option>
+              <option value="unresolved_question">Сложный вопрос</option>
+              <option value="casual_chat">Обычный диалог</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-gray-400 mb-1">Сила боли (0–3):</label>
+            <input v-model.number="editTag.pain_intensity" type="number" step="0.5" min="0" max="3" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-white">
+          </div>
+        </div>
+        <div class="flex justify-end space-x-2 pt-2">
+          <button @click="tagModalOpen = false" class="px-3 py-1.5 bg-gray-800 text-gray-300 rounded text-xs">Отмена</button>
+          <button @click="saveTag" class="px-3 py-1.5 bg-indigo-600 text-white rounded text-xs font-semibold">Сохранить тег</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Vue 3 Application Script -->
+  <script>
+    const { createApp, ref, onMounted } = Vue;
+
+    createApp({
+      setup() {
+        const currentTab = ref('dashboard');
+        const tabs = [
+          { id: 'dashboard', name: 'Дашборд болей', icon: '📊' },
+          { id: 'feed', name: 'Лента инсайтов', icon: '💬' },
+          { id: 'hypotheses', name: 'Бэклог гипотез', icon: '💡' },
+          { id: 'rules', name: 'Правила & LAYA', icon: '⚙️' },
+        ];
+
+        const selectedCountry = ref('TH');
+        const countries = ref([]);
+        const clusters = ref([]);
+        const stats = ref({});
+        const rules = ref([]);
+        const hypotheses = ref([]);
+        const showAddCountryModal = ref(false);
+
+        // Feed state
+        const feedItems = ref([]);
+        const feedTotal = ref(0);
+        const feedPage = ref(1);
+        const feedLimit = ref(30);
+        const feedLoading = ref(false);
+        const classifying = ref(false);
+
+        const filters = ref({
+          topic: 'all',
+          signal_type: 'all',
+          min_pain: 0,
+          search: '',
+          sort_by: 'pain_desc'
+        });
+
+        // Modals
+        const hypothesisModalOpen = ref(false);
+        const newHypothesis = ref({
+          title: '',
+          topic: 'visas',
+          target_audience: 'Экспаты и номады в Таиланде',
+          pain_summary: '',
+          sample_message_ids: ''
+        });
+
+        const tagModalOpen = ref(false);
+        const activeMessage = ref(null);
+        const editTag = ref({
+          topic_category: 'visas',
+          signal_type: 'pain_complaint',
+          pain_intensity: 2.0,
+          human_notes: ''
+        });
+
+        const loadCountries = async () => {
+          try {
+            const res = await fetch('/api/countries');
+            countries.value = await res.json();
+          } catch (e) {
+            console.error('Failed to load countries', e);
+          }
+        };
+
+        const loadClusters = async () => {
+          try {
+            const res = await fetch('/api/clusters?country_code=' + selectedCountry.value);
+            clusters.value = await res.json();
+          } catch (e) {
+            console.error('Failed to load clusters', e);
+          }
+        };
+
+        const loadStats = async () => {
+          try {
+            const res = await fetch('/api/stats?country_code=' + selectedCountry.value);
+            stats.value = await res.json();
+          } catch (e) {
+            console.error('Failed to load stats', e);
+          }
+        };
+
+        const loadRules = async () => {
+          try {
+            const res = await fetch('/api/rules');
+            rules.value = await res.json();
+          } catch (e) {
+            console.error('Failed to load rules', e);
+          }
+        };
+
+        const loadHypotheses = async () => {
+          try {
+            const res = await fetch('/api/hypotheses');
+            hypotheses.value = await res.json();
+          } catch (e) {
+            console.error('Failed to load hypotheses', e);
+          }
+        };
+
+        const loadFeed = async () => {
+          feedLoading.value = true;
+          try {
+            const params = new URLSearchParams({
+              country_code: selectedCountry.value,
+              topic: filters.value.topic,
+              signal_type: filters.value.signal_type,
+              min_pain: filters.value.min_pain,
+              search: filters.value.search,
+              sort_by: filters.value.sort_by,
+              page: feedPage.value,
+              limit: feedLimit.value
+            });
+            const res = await fetch('/api/signals?' + params.toString());
+            const data = await res.json();
+            feedItems.value = data.items || [];
+            feedTotal.value = data.total || 0;
+          } catch (e) {
+            console.error('Failed to load feed', e);
+          } finally {
+            feedLoading.value = false;
+          }
+        };
+
+        const switchCountry = (code) => {
+          selectedCountry.value = code;
+          loadStats();
+          loadClusters();
+          feedPage.value = 1;
+          loadFeed();
+        };
+
+        const applyFilters = () => {
+          feedPage.value = 1;
+          loadFeed();
+        };
+
+        const resetFilters = () => {
+          filters.value = {
+            topic: 'all',
+            signal_type: 'all',
+            min_pain: 0,
+            search: '',
+            sort_by: 'pain_desc'
+          };
+          feedPage.value = 1;
+          loadFeed();
+        };
+
+        const openHypothesisFromCluster = (cluster) => {
+          newHypothesis.value = {
+            title: 'Сервис: ' + cluster.title,
+            topic: cluster.topic,
+            target_audience: 'Экспаты и резиденты (' + getCountryName(selectedCountry.value) + ')',
+            pain_summary: cluster.description,
+            sample_message_ids: cluster.sample_quotes ? cluster.sample_quotes.map(q => q.message_id).join(',') : ''
+          };
+          hypothesisModalOpen.value = true;
+        };
+
+        const goToFeedForCluster = (cluster) => {
+          filters.value.topic = cluster.topic;
+          filters.value.search = cluster.keywords[0] || '';
+          filters.value.min_pain = 1.5;
+          currentTab.value = 'feed';
+          feedPage.value = 1;
+          loadFeed();
+        };
+
+        const recalculateClusters = async () => {
+          alert('Пересчет кластеров запущен...');
+          loadClusters();
+        };
+
+        // Modals methods
+        const openHypothesisModal = (msg) => {
+          if (msg) {
+            newHypothesis.value = {
+              title: 'Гипотеза: ' + (msg.text ? msg.text.slice(0, 45) + '...' : 'Новое решение'),
+              topic: msg.topic_category || 'visas',
+              target_audience: 'Экспаты и туристы (' + getCountryName(selectedCountry.value) + ')',
+              pain_summary: msg.text || '',
+              sample_message_ids: String(msg.message_id)
+            };
+          } else {
+            newHypothesis.value = {
+              title: '',
+              topic: 'visas',
+              target_audience: 'Экспаты в ' + getCountryName(selectedCountry.value),
+              pain_summary: '',
+              sample_message_ids: ''
+            };
+          }
+          hypothesisModalOpen.value = true;
+        };
+
+        const saveHypothesis = async () => {
+          try {
+            await fetch('/api/hypotheses', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(newHypothesis.value)
+            });
+            hypothesisModalOpen.value = false;
+            loadHypotheses();
+            currentTab.value = 'hypotheses';
+          } catch (e) {
+            alert('Ошибка сохранения гипотезы');
+          }
+        };
+
+        const deleteHypothesis = async (id) => {
+          if (!confirm('Удалить эту гипотезу?')) return;
+          try {
+            await fetch('/api/hypotheses/' + id, { method: 'DELETE' });
+            loadHypotheses();
+          } catch (e) {
+            alert('Ошибка удаления');
+          }
+        };
+
+        const openTagModal = (msg) => {
+          activeMessage.value = msg;
+          editTag.value = {
+            topic_category: msg.topic_category || 'general',
+            signal_type: msg.signal_type || 'casual_chat',
+            pain_intensity: msg.pain_intensity || 0.0,
+            human_notes: msg.human_notes || ''
+          };
+          tagModalOpen.value = true;
+        };
+
+        const saveTag = async () => {
+          if (!activeMessage.value) return;
+          try {
+            const { chat_id, message_id } = activeMessage.value;
+            await fetch(`/api/messages/${chat_id}/${message_id}/tag`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(editTag.value)
+            });
+            activeMessage.value.topic_category = editTag.value.topic_category;
+            activeMessage.value.signal_type = editTag.value.signal_type;
+            activeMessage.value.pain_intensity = editTag.value.pain_intensity;
+            activeMessage.value.human_verified = true;
+            tagModalOpen.value = false;
+          } catch (e) {
+            alert('Ошибка обновления тега');
+          }
+        };
+
+        const triggerClassification = async () => {
+          classifying.value = true;
+          try {
+            alert('Запуск разметки следующих 500 сообщений на GPU...');
+            await fetch('/api/classify/trigger', { method: 'POST' });
+          } catch (e) {
+            console.error(e);
+          } finally {
+            setTimeout(() => {
+              classifying.value = false;
+              loadStats();
+              loadFeed();
+            }, 3000);
+          }
+        };
+
+        // Helpers
+        const getCountryName = (code) => {
+          const map = {
+            TH: 'Таиланд',
+            ID: 'Бали (Индонезия)',
+            VN: 'Вьетнам',
+            AE: 'ОАЭ',
+            GE: 'Грузия'
+          };
+          return map[code] || code;
+        };
+
+        const getTopicLabel = (t) => {
+          const map = {
+            visas: 'Визы и въезд',
+            money: 'Банки и финансы',
+            housing: 'Аренда жилья',
+            transport: 'Транспорт и байки',
+            health: 'Медицина и страховка',
+            work_business: 'Бизнес и работа',
+            general: 'Бытовые / флуд',
+            unclassified: 'Без категории'
+          };
+          return map[t] || t;
+        };
+
+        const getSignalLabel = (s) => {
+          const map = {
+            pain_complaint: 'Острая боль / отказ',
+            commercial_intent: 'Поиск платной услуги',
+            unresolved_question: 'Сложный вопрос',
+            casual_chat: 'Диалог'
+          };
+          return map[s] || s;
+        };
+
+        const getSignalBadgeClass = (s) => {
+          const map = {
+            pain_complaint: 'bg-rose-950/80 text-rose-300 border border-rose-700/60',
+            commercial_intent: 'bg-amber-950/80 text-amber-300 border border-amber-700/60',
+            unresolved_question: 'bg-blue-950/80 text-blue-300 border border-blue-700/60',
+            casual_chat: 'bg-gray-800 text-gray-400 border border-gray-700'
+          };
+          return map[s] || 'bg-gray-800 text-gray-400';
+        };
+
+        const getPainBadgeClass = (p) => {
+          if (p >= 2.5) return 'bg-rose-600 text-white shadow shadow-rose-600/30';
+          if (p >= 1.5) return 'bg-amber-600 text-white';
+          return 'bg-gray-800 text-gray-400 border border-gray-700';
+        };
+
+        onMounted(() => {
+          loadCountries();
+          loadStats();
+          loadClusters();
+          loadRules();
+          loadHypotheses();
+          loadFeed();
+        });
+
+        return {
+          currentTab,
+          tabs,
+          selectedCountry,
+          countries,
+          clusters,
+          stats,
+          rules,
+          hypotheses,
+          feedItems,
+          feedTotal,
+          feedPage,
+          feedLimit,
+          feedLoading,
+          classifying,
+          filters,
+          showAddCountryModal,
+          switchCountry,
+          applyFilters,
+          resetFilters,
+          loadFeed,
+          openHypothesisFromCluster,
+          goToFeedForCluster,
+          recalculateClusters,
+          hypothesisModalOpen,
+          newHypothesis,
+          openHypothesisModal,
+          saveHypothesis,
+          deleteHypothesis,
+          tagModalOpen,
+          activeMessage,
+          editTag,
+          openTagModal,
+          saveTag,
+          triggerClassification,
+          getCountryName,
+          getTopicLabel,
+          getSignalLabel,
+          getSignalBadgeClass,
+          getPainBadgeClass
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>

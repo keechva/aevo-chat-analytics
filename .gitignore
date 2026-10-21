@@ -1,0 +1,35 @@
+# Data files (raw exports and processed databases)
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+*.parquet
+*.duckdb
+*.sqlite
+*.sqlite3
+*.jsonl
+*.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Environment and secrets
+.env
+.env.local
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
