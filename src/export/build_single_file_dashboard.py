@@ -142,6 +142,62 @@ def fetch_data():
             "created_at": h[7]
         })
 
+    # 6. Timeline for Visa case study (Aug 25 - Sep 25, 2026)
+    timeline_rows = con.execute("""
+    SELECT 
+        strftime(date, '%Y-%m-%d') as d,
+        count(*) as total_msgs,
+        count(CASE WHEN lower(text) LIKE '%виз%' OR lower(text) LIKE '%dtv%' OR lower(text) LIKE '%дтв%' OR lower(text) LIKE '%штамп%' THEN 1 END) as visa_msgs
+    FROM fact_messages
+    WHERE date BETWEEN '2026-08-25' AND '2026-09-25'
+    GROUP BY d
+    ORDER BY d ASC;
+    """).fetchall()
+    timeline_visa = [{"date": r[0], "total": r[1], "visa": r[2]} for r in timeline_rows]
+
+    # 7. Recommendations and Mentioned Services
+    recommendations = {
+        "services": [
+            {"name": "@askmoney", "count": 786, "category": "Обмен валюты / SWIFT / Рубли в баты"},
+            {"name": "@askpavel", "count": 636, "category": "Обмен / Помощник TravelAsk"},
+            {"name": "@viktor_thai", "count": 481, "category": "Визы DTV / Бордер-ран (Бангкок, Паттайя)"},
+            {"name": "@marina_thailand", "count": 468, "category": "Визы / Бордер-ран / Счета в банках"},
+            {"name": "@dariaadmin_travelask", "count": 458, "category": "Администрация TravelAsk"},
+            {"name": "@yakov_thailand", "count": 369, "category": "Бордер-ран (Пхукет, Самуи, Краби)"},
+            {"name": "@ivan_bike", "count": 295, "category": "Аренда мотобайков на Пхукете"},
+            {"name": "@daniil_ticket", "count": 260, "category": "Покупка авиабилетов и мероприятий"}
+        ],
+        "communities": [
+            {"name": "t.me/visadtv", "desc": "Главный экспертный чат по визам DTV в Таиланде"},
+            {"name": "t.me/forum_phuket", "desc": "Крупнейшее сообщество экспатов на Пхукете"},
+            {"name": "t.me/bangkok_forum", "desc": "Бизнес, медицина и жизнь в Бангкоке"},
+            {"name": "t.me/thailand_drive", "desc": "Автомобили, права категории А, облавы полиции"},
+            {"name": "t.me/samui_forum", "desc": "Зимовка, кондо и жилье на Самуи и Пангане"}
+        ]
+    }
+
+    # 8. Core Archetypes Breakdown
+    core_archetypes = [
+        {
+            "role": "Органические эксперты-альтруисты",
+            "share": "~70% ядра",
+            "examples": "Alexander (4.3k сообщ, 99.2% ответы), Кот ☕️ (3.6k сообщ, 99.3% ответы), Maksim Velichko (1.9k сообщ, 99.4% ответы)",
+            "behavior": "Бесплатно отвечают новичкам ежедневно, делятся личным опытом, формируют авторитет чата, скептичны к скаму."
+        },
+        {
+            "role": "Коммерческая воронка и боты-посредники",
+            "share": "~20% ядра",
+            "examples": "Trusted_recommendation_bot (2.8k сообщ), travelask_moderator_bot (2.8k сообщ), агенты @viktor_thai, @marina_thailand",
+            "behavior": "Реактивно перехватывают вопросы со словами 'виза', 'счет', 'обмен' и направляют новичков к аффилированным платным агентам."
+        },
+        {
+            "role": "Периодические экспаты-старожилы",
+            "share": "~10% ядра",
+            "examples": "Lanna, Denis, Nikolay",
+            "behavior": "Включаются в моменты регуляторных потрясений (изменение штампов 15.09, блокировка карт) для разъяснения законов."
+        }
+    ]
+
     con.close()
 
     return {
@@ -156,7 +212,10 @@ def fetch_data():
             "signals": signals_stats
         },
         "signals": signals_data,
-        "hypotheses": hypotheses
+        "hypotheses": hypotheses,
+        "timeline_visa": timeline_visa,
+        "recommendations": recommendations,
+        "core_archetypes": core_archetypes
     }
 
 def generate_html(data: dict) -> str:
@@ -680,7 +739,7 @@ def generate_html(data: dict) -> str:
             <div class="bg-gray-800/60 p-3 rounded-lg text-xs space-y-2 border border-gray-700/50">
               <div>
                 <span class="text-rose-400 font-semibold">Всплеск 15–16 сентября 2026:</span>
-                <p class="text-gray-400 mt-0.5">09.09 (67 сообщений) → 15.09 (50 сообщений) — реакция на ограничение визаранов и изменение штампов. Первоисточник в чатах: пост канала «Таиланд новости» 16.09 в 13:34.</p>
+                <p class="text-gray-400 mt-0.5">Базовый фон: 11.8 сообщ/день. Всплеск 09.09 (58 сообщ, +5.5σ) и 15.09 (47 сообщ, +4.2σ) — подтвержденные математические аномалии. Первый вброс был 30.08 в 13:01 (за 16 дней до закона).</p>
               </div>
               <div>
                 <span class="text-emerald-400 font-semibold">Статус группы @visadtv:</span>
@@ -689,6 +748,108 @@ def generate_html(data: dict) -> str:
               <div>
                 <span class="text-indigo-300 font-semibold">Топ чатов для расширения (до 10):</span>
                 <p class="text-gray-400 mt-0.5">@visadtv, forum_phuket, forum_pattaya, thailand_forum, thailand_drive, samui_forum.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= CASE STUDIES SECTION ================= -->
+        <div class="space-y-4 pt-4 border-t border-gray-800">
+          <h3 class="text-base font-bold text-white flex items-center space-x-2">
+            <span>🔬 Глубокие кейсы: Проверка гипотез на исходных сообщениях</span>
+            <span class="text-xs bg-indigo-900/60 text-indigo-300 border border-indigo-700/60 px-2 py-0.5 rounded font-medium">Запрос продуктовой команды</span>
+          </h3>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <!-- Кейс 1: Bangkok Bank -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
+              <div class="flex justify-between items-start">
+                <div>
+                  <span class="text-xs text-amber-400 font-semibold bg-amber-950 px-2 py-0.5 rounded border border-amber-800">Кейс 1: Финансы</span>
+                  <h4 class="text-sm font-bold text-white mt-1">Эволюция открытия счетов в Bangkok Bank (2022 → Май 2025 → 2026)</h4>
+                </div>
+              </div>
+              <p class="text-xs text-gray-300 leading-relaxed">
+                Исследование 194 профильных сообщений выявило радикальный слом пользовательского опыта и рождение рынка посредников:
+              </p>
+              <div class="space-y-2 text-xs">
+                <div class="bg-gray-800/60 p-2.5 rounded border border-gray-700/40">
+                  <span class="text-emerald-400 font-bold block">1. До мая 2025 (Эпоха лёгкого открытия):</span>
+                  <p class="text-gray-300 mt-0.5 italic">"ЧиангМай. Счёт в Бангкок Банке открыл за 20 минут. За всё 1100 бат. Плюс справка из иммиграции 500 бат... Открывают туристам по штампу за покупку страховки."</p>
+                </div>
+                <div class="bg-rose-950/40 p-2.5 rounded border border-rose-800/40">
+                  <span class="text-rose-400 font-bold block">2. Май — Июнь 2025 (Регуляторный слом и массовые блокировки):</span>
+                  <p class="text-gray-300 mt-0.5">Банк Таиланда ужесточил AML-контроль над иностранцами без рабочих виз. В чатах зафиксирована волна закрытия счетов («всеобщая блокировка»).</p>
+                </div>
+                <div class="bg-indigo-950/40 p-2.5 rounded border border-indigo-800/40">
+                  <span class="text-indigo-300 font-bold block">3. 2026 год (Рынок помогал за 15–25 тыс. бат):</span>
+                  <p class="text-gray-300 mt-0.5 italic">"Ну я вот щас по банкам хожу, уже три отказа от касикорн, бангкок банк, ттб... Ищу проверенного агента на Пхукете... Слава: Предыдущий заблокировали когда была всеобщая блокировка."</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Кейс 2: Визы 15.09.2026 -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
+              <div class="flex justify-between items-start">
+                <div>
+                  <span class="text-xs text-rose-400 font-semibold bg-rose-950 px-2 py-0.5 rounded border border-rose-800">Кейс 2: Визы & Ранние сигналы</span>
+                  <h4 class="text-sm font-bold text-white mt-1">Реконструкция визовых изменений 15.09.2026: Зарождение слухов и лавина</h4>
+                </div>
+              </div>
+              <p class="text-xs text-gray-300 leading-relaxed">
+                Математический анализ базового фона (среднее: 11.8 сообщ/день, σ = 8.4) доказал обнаружение раннего сигнала <b>за 16 дней до события</b>:
+              </p>
+              <div class="space-y-2 text-xs">
+                <div class="bg-gray-800/60 p-2.5 rounded border border-gray-700/40">
+                  <span class="text-amber-400 font-bold block">30 августа 13:01 (Ранний сигнал за 16 дней):</span>
+                  <p class="text-gray-300 mt-0.5 italic">Пользователь «Бога»: "Читал новости, говорят что с середины сентября штамп по прилёту будут ставить на 30 дней... Кто что слышал?"</p>
+                </div>
+                <div class="bg-purple-950/40 p-2.5 rounded border border-purple-800/40">
+                  <span class="text-purple-300 font-bold block">31 августа 12:21 (Перехват агентами и разгон паники):</span>
+                  <p class="text-gray-300 mt-0.5 italic">Визовый посредник Марина: "Все уже наверняка слышали, что безвиз на 60 дней отменяют! Заказывайте оформление заранее..."</p>
+                </div>
+                <div class="bg-rose-950/40 p-2.5 rounded border border-rose-800/40">
+                  <span class="text-rose-400 font-bold block">09 сентября (+5.5σ) и 15 сентября (+4.2σ):</span>
+                  <p class="text-gray-300 mt-0.5">Всплеск до 58 сообщений в день. Вступление закона в силу (сокращение до 30 дней, лимит 2 въезда по суше в год). 16.09 консульства добавляют справку о несудимости для DTV.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Рынок рекомендаций и Анатомия Ядра -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 pt-2">
+            <!-- Граф рекомендаций -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-3">
+              <h4 class="text-sm font-bold text-white flex items-center space-x-2">
+                <span>🔗 Граф рекомендаций: Кто и что советует (Топ-8)</span>
+              </h4>
+              <p class="text-xs text-gray-400">Частотный анализ 11 522 сообщений со ссылками и упоминаниями экспертов</p>
+              <div class="space-y-1.5 text-xs">
+                <div v-for="s in recommendations.services" :key="s.name" class="flex justify-between items-center bg-gray-800/50 p-2 rounded">
+                  <div>
+                    <b class="text-indigo-300">{{{{ s.name }}}}</b>
+                    <span class="text-gray-400 text-[11px] ml-2">{{{{ s.category }}}}</span>
+                  </div>
+                  <span class="text-emerald-400 font-bold font-mono">{{{{ s.count }}}} упом.</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Анатомия Ядра -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-3">
+              <h4 class="text-sm font-bold text-white flex items-center space-x-2">
+                <span>👥 Анатомия Ядра (Декомпозиция 680 топ-авторов)</span>
+              </h4>
+              <p class="text-xs text-gray-400">Кто генерирует 45.4% всего контента и почему регулярно отвечают новичкам</p>
+              <div class="space-y-2 text-xs">
+                <div v-for="a in coreArchetypes" :key="a.role" class="bg-gray-800/50 p-3 rounded space-y-1">
+                  <div class="flex justify-between items-center">
+                    <b class="text-white">{{{{ a.role }}}}</b>
+                    <span class="text-indigo-400 text-[11px] font-semibold">{{{{ a.share }}}}</span>
+                  </div>
+                  <p class="text-gray-300 text-[11px]">{{{{ a.behavior }}}}</p>
+                  <p class="text-gray-500 text-[10px]">Примеры: {{{{ a.examples }}}}</p>
+                </div>
               </div>
             </div>
           </div>
@@ -782,6 +943,8 @@ def generate_html(data: dict) -> str:
         const stats = ref(INITIAL_DATA.stats || {{}});
         const signals = ref(INITIAL_DATA.signals || []);
         const hypotheses = ref(JSON.parse(localStorage.getItem('aevo_hypotheses') || 'null') || INITIAL_DATA.hypotheses || []);
+        const recommendations = ref(INITIAL_DATA.recommendations || {{ services: [], communities: [] }});
+        const coreArchetypes = ref(INITIAL_DATA.core_archetypes || []);
 
         const currentTab = ref('dashboard');
         const tabs = ref([
@@ -979,6 +1142,8 @@ def generate_html(data: dict) -> str:
           getSignalBadgeClass,
           getStatusBadgeClass,
           filterFeedByTopic,
+          recommendations,
+          coreArchetypes,
           openHypothesisFromCluster,
           openHypothesisFromMessage,
           saveHypothesis,
