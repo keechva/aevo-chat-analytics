@@ -9,6 +9,9 @@
 - [x] Автоматический движок синтеза болей (`src/analytics/problem_clusterer.py`): 6 проблемных узлов с подбором живых цитат участников <!-- id: 36 -->
 - [x] Расчет Opportunity Score (0-100) на основе объема, силы боли и коммерческого спроса <!-- id: 37 -->
 - [x] Сборка автономного Single-File дашборда с зашитыми данными (`aevo_insights_dashboard.html`, 322 KB) для передачи коллегам <!-- id: 38 -->
+- [x] Публикация репозитория на GitHub: `https://github.com/keechva/aevo-chat-analytics` <!-- id: 39 -->
+- [x] Деплой на GitHub Pages: `https://keechva.github.io/aevo-chat-analytics/` <!-- id: 40 -->
+- [x] Создан Release v1.0.0 с автономным HTML-артефактом <!-- id: 41 -->
 - [x] Запуск веб-сервера на `http://localhost:8000` в режиме `reload=True` <!-- id: 26 -->
 
 ## В работе
