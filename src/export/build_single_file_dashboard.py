@@ -594,6 +594,107 @@ def generate_html(data: dict) -> str:
         </div>
       </div>
 
+      <!-- ================= TAB 4: АУДИТ ДАННЫХ (4 ВОПРОСА) ================= -->
+      <div v-if="currentTab === 'audit'" class="space-y-6">
+        <div>
+          <h3 class="text-base font-bold text-white flex items-center space-x-2">
+            <span>📊 Аудит данных: Ответы на 4 ключевых вопроса</span>
+            <span class="text-xs bg-indigo-950 text-indigo-300 border border-indigo-800/60 px-2.5 py-0.5 rounded-full font-semibold">Фактология по 240k сообщениям</span>
+          </h3>
+          <p class="text-xs text-gray-400 mt-0.5">Результаты первичного исследования качества данных, сквозной идентификации, сегментации и доступности аудитории</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <!-- Вопрос 1: Идентификация -->
+          <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-3">
+            <div class="flex items-center space-x-2">
+              <span class="w-6 h-6 rounded-lg bg-indigo-600/30 text-indigo-400 border border-indigo-500/40 flex items-center justify-center font-bold text-xs">1</span>
+              <h4 class="text-sm font-bold text-white">Идентификация и сквозной профиль</h4>
+            </div>
+            <p class="text-xs text-gray-300 leading-relaxed">
+              <b>Вопрос:</b> У всех ли сообщений есть устойчивый Telegram ID? Он сквозной между чатами? Можем ли объединять историю пользователя?
+            </p>
+            <div class="bg-gray-800/60 p-3 rounded-lg text-xs space-y-1.5 border border-gray-700/50">
+              <div class="flex justify-between"><span class="text-gray-400">Наличие Telegram ID:</span><b class="text-emerald-400">99.8% сообщений</b></div>
+              <div class="flex justify-between"><span class="text-gray-400">Устойчивость ID:</span><b class="text-emerald-400">100% сквозной (user_id)</b></div>
+              <div class="flex justify-between"><span class="text-gray-400">Пользователей в 2+ чатах:</span><b class="text-indigo-300">281 участник</b></div>
+            </div>
+            <p class="text-xs text-gray-300 leading-relaxed">
+              <b>Вывод:</b> <span class="text-emerald-300 font-semibold">Да, полностью можем.</span> Формат <code class="text-indigo-300">user&lt;ID&gt;</code> не меняется при смене имени, юзернейма или телефона. Мы видим путь экспата: общий туристический чат (TravelAsk) → чат по страхованию → региональные чаты (Пхукет/Паттайя).
+            </p>
+          </div>
+
+          <!-- Вопрос 2: Сегментация -->
+          <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-3">
+            <div class="flex items-center space-x-2">
+              <span class="w-6 h-6 rounded-lg bg-indigo-600/30 text-indigo-400 border border-indigo-500/40 flex items-center justify-center font-bold text-xs">2</span>
+              <h4 class="text-sm font-bold text-white">Сегментация активности и роли (Q&A)</h4>
+            </div>
+            <p class="text-xs text-gray-300 leading-relaxed">
+              <b>Вопрос:</b> Как распределяется аудитория? Есть ли ядро участников? Кто задает вопросы, а кто отвечает?
+            </p>
+            <div class="bg-gray-800/60 p-3 rounded-lg text-xs space-y-1.5 border border-gray-700/50">
+              <div class="flex justify-between"><span class="text-gray-400">Разовые гости (1 сообщение):</span><b class="text-amber-300">53.4% аудитории (5.2% контента)</b></div>
+              <div class="flex justify-between"><span class="text-gray-400">Ядро комьюнити (&gt;100 сообщ):</span><b class="text-rose-400">2.9% (680 чел) = 45.4% контента!</b></div>
+              <div class="flex justify-between"><span class="text-gray-400">Прямые ответы на вопросы:</span><b class="text-indigo-300">64.5% всех сообщений</b></div>
+            </div>
+            <p class="text-xs text-gray-300 leading-relaxed">
+              <b>Вывод:</b> Экстремальная концентрация. Консультанты чата («Денис เดน» — 3.6k сообщ., 64% ответов; «Anna» — 2.7k сообщ., 76% ответов) формируют повестку и авторитетно направляют туристов.
+            </p>
+          </div>
+
+          <!-- Вопрос 3: Доступность -->
+          <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-3">
+            <div class="flex items-center space-x-2">
+              <span class="w-6 h-6 rounded-lg bg-indigo-600/30 text-indigo-400 border border-indigo-500/40 flex items-center justify-center font-bold text-xs">3</span>
+              <h4 class="text-sm font-bold text-white">Доступность аудитории и каналы охвата</h4>
+            </div>
+            <p class="text-xs text-gray-300 leading-relaxed">
+              <b>Вопрос:</b> У какой доли есть Telegram ID и username? Где можем использовать ID (реклама, механики охвата)?
+            </p>
+            <div class="bg-gray-800/60 p-3 rounded-lg text-xs space-y-2 border border-gray-700/50">
+              <div>
+                <span class="text-indigo-300 font-semibold">1. Telegram Ads (Рекламный кабинет):</span>
+                <p class="text-gray-400 mt-0.5">Загрузка списков user_id в Telegram Ads недоступна политикой приватности TG. Однако мы знаем список 10 ключевых каналов концентрации аудитории для точного таргетинга.</p>
+              </div>
+              <div>
+                <span class="text-emerald-400 font-semibold">2. Telegram Mini Apps (TMA) & Боты:</span>
+                <p class="text-gray-400 mt-0.5"><b>Самый сильный легальный канал.</b> Посев полезного сервиса (калькулятор DTV, проверка штрафов) в этих чатах. При открытии TMA создается бесплатный постоянный push-канал.</p>
+              </div>
+              <div>
+                <span class="text-amber-400 font-semibold">3. Персональный аутрич:</span>
+                <p class="text-gray-400 mt-0.5">Только для 680 экспертов ядра (амбассадорство, партнерство). Массовый спам в ЛС запрещен.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Вопрос 4: Динамика и кейс 15.09.2026 -->
+          <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-3">
+            <div class="flex items-center space-x-2">
+              <span class="w-6 h-6 rounded-lg bg-indigo-600/30 text-indigo-400 border border-indigo-500/40 flex items-center justify-center font-bold text-xs">4</span>
+              <h4 class="text-sm font-bold text-white">Динамика за 2026 год, всплески и DTV кейс</h4>
+            </div>
+            <p class="text-xs text-gray-300 leading-relaxed">
+              <b>Вопрос:</b> Можем ли выявлять всплески и первоисточники? Что произошло 15.09.2026? Можно ли выгрузить группу @visadtv?
+            </p>
+            <div class="bg-gray-800/60 p-3 rounded-lg text-xs space-y-2 border border-gray-700/50">
+              <div>
+                <span class="text-rose-400 font-semibold">Всплеск 15–16 сентября 2026:</span>
+                <p class="text-gray-400 mt-0.5">09.09 (67 сообщений) → 15.09 (50 сообщений) — реакция на ограничение визаранов и изменение штампов. Первоисточник в чатах: пост канала «Таиланд новости» 16.09 в 13:34.</p>
+              </div>
+              <div>
+                <span class="text-emerald-400 font-semibold">Статус группы @visadtv:</span>
+                <p class="text-gray-400 mt-0.5"><b>Главный источник правды по DTV.</b> Все консультанты чатов ссылаются на нее. Технически выгружается как штатно, так и по API (Telethon).</p>
+              </div>
+              <div>
+                <span class="text-indigo-300 font-semibold">Топ чатов для расширения (до 10):</span>
+                <p class="text-gray-400 mt-0.5">@visadtv, forum_phuket, forum_pattaya, thailand_forum, thailand_drive, samui_forum.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </main>
 
     <!-- Modal: Formula Explanation -->
@@ -686,6 +787,7 @@ def generate_html(data: dict) -> str:
         const tabs = ref([
           {{ id: 'dashboard', name: 'Синтез болей и Opportunity', icon: '🔥' }},
           {{ id: 'feed', name: 'Лента инсайтов', icon: '⚡', badge: signals.value.length }},
+          {{ id: 'audit', name: 'Аудит (4 вопроса)', icon: '📊' }},
           {{ id: 'hypotheses', name: 'Бэклог гипотез', icon: '📋', badge: hypotheses.value.length }}
         ]);
 
